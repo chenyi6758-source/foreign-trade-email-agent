@@ -1,0 +1,35 @@
+{
+  "name": "foreign-trade-email-agent",
+  "version": "0.1.0",
+  "description": "Safe-by-default AI email assistant for foreign trade teams.",
+  "type": "module",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node src/main.js",
+    "once": "node src/main.js --once",
+    "contacts": "node src/view_contacts.js",
+    "outreach": "node src/send_outreach.js",
+    "test": "node --test",
+    "check": "node --check src/main.js && node --check src/ai.js && node --check src/mailer.js && node --check src/db.js && node --check src/send_outreach.js && node --check src/view_contacts.js"
+  },
+  "keywords": [
+    "foreign-trade",
+    "email",
+    "ai-agent",
+    "imap",
+    "smtp",
+    "anthropic"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.0",
+    "dotenv": "^16.6.1",
+    "imapflow": "^1.4.1",
+    "lowdb": "^7.0.1",
+    "mailparser": "^3.9.10",
+    "nodemailer": "^9.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
