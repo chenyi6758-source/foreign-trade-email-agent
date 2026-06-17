@@ -1,0 +1,6 @@
+interface:
+  display_name: "Foreign Trade SOHO Workflow"
+  short_description: "Run a safe daily AI workflow for leads, outreach, CRM, and follow-ups."
+  default_prompt: "Use $foreign-trade-soho-workflow to import leads, draft outreach, schedule follow-ups, and summarize today's SOHO export work."
+policy:
+  allow_implicit_invocation: true

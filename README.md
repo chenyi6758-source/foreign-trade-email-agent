@@ -16,6 +16,7 @@ The project intentionally keeps dangerous automation off by default. AI can draf
 | Market intelligence digest | Starter module | `npm run intel:demo` |
 | WhatsApp channel | Adapter placeholder | `npm run whatsapp:status` |
 | Hermes/Codex skill | Valid skill package | `skill/foreign-trade-autopilot/` |
+| SOHO workflow skill | Validatable workflow skill | `skill/foreign-trade-soho-workflow/` |
 
 ## What This Solves For A SOHO Exporter
 
@@ -152,10 +153,17 @@ AI-generated business messages should be reviewed before sending to important bu
 
 ## Hermes / Codex Skill
 
-The skill package is included at:
+Two skill packages are included:
 
 ```text
-skill/foreign-trade-autopilot/
+skill/foreign-trade-autopilot/       # project development and maintenance
+skill/foreign-trade-soho-workflow/   # daily SOHO business automation workflow
 ```
 
-Use it to guide future Codex/Hermes work on email automation, leads, CRM, market intelligence, WhatsApp integration, and safe SOHO rollout.
+Use `foreign-trade-autopilot` to guide future project development. Use `foreign-trade-soho-workflow` when an AI assistant should help run the daily business workflow: import leads, score buyers, create outreach drafts, schedule follow-ups, review inbound email, and produce daily summaries.
+
+Validate the workflow skill demo without sending email:
+
+```bash
+node skill/foreign-trade-soho-workflow/scripts/run-demo-workflow.mjs
+```
