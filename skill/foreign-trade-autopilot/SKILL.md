@@ -9,7 +9,7 @@ Use this skill for the `foreign-trade-autopilot` project or similar foreign trad
 
 ## Workflow
 
-1. Start by reading `README.md`, `.env.example`, and `src/capabilities.js`.
+1. Start by reading `README.md`, `.env.example`, `src/capabilities.js`, and `src/server.js`.
 2. Preserve the safe default: `DRY_RUN=true`. Never make live sending the default.
 3. Treat email as one module, not the whole product. Keep room for CRM, leads, market intelligence, and messaging channels.
 4. Avoid full mailbox scans. Keep `MAX_EMAILS_PER_SCAN` bounded and prefer recent or unread messages.
@@ -21,6 +21,7 @@ Use this skill for the `foreign-trade-autopilot` project or similar foreign trad
 - Email: read `src/main.js`, `src/mailer.js`, and `src/ai.js` before changing inbox or sending behavior.
 - CRM: read `src/db.js` before changing contacts, threads, or processed-message state.
 - Leads: extend `src/leads.js` for CSV, search snippets, directories, or scraped page text.
+- Dashboard: extend `src/server.js` and `public/` for SOHO workflows. Keep it local-first and do not expose it publicly without authentication.
 - Market intelligence: extend `src/market_intel.js` for RSS/news normalization and daily digest output.
 - WhatsApp: use `src/whatsapp.js` as the adapter boundary. Do not add live WhatsApp sending without explicit user approval, QR-login handling, dry-run, rate limiting, and account-risk notes.
 - Skill packaging: keep this skill concise and put longer setup details in `references/configuration.md`.
@@ -37,6 +38,7 @@ Use this skill for the `foreign-trade-autopilot` project or similar foreign trad
 ```bash
 npm install
 npm run capabilities
+npm run dashboard
 npm run once
 npm start
 npm run contacts

@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { buildLeadRecord, extractLeadSignals, scoreLead } from '../src/leads.js'
+import { buildLeadRecord, buildOutreachDraft, extractLeadSignals, parseLeadCsv, scoreLead } from '../src/leads.js'
 import { buildDailyDigest } from '../src/market_intel.js'
 import { whatsappStatus } from '../src/whatsapp.js'
 
@@ -23,6 +23,29 @@ test('buildLeadRecord returns a portable lead object', () => {
   const lead = buildLeadRecord({ text: 'buyer@example.com', source: 'test' })
   assert.equal(lead.source, 'test')
   assert.equal(lead.emails[0], 'buyer@example.com')
+})
+
+test('parseLeadCsv maps rows into lead records', () => {
+  const [lead] = parseLeadCsv('company,name,email,website,country,notes\nABC,John,john@example.com,www.example.com,US,LED buyer', {
+    targetKeywords: ['LED'],
+  })
+  assert.equal(lead.company, 'ABC')
+  assert.equal(lead.email, 'john@example.com')
+  assert.ok(lead.score >= 60)
+})
+
+test('buildOutreachDraft creates a first-touch email draft', () => {
+  const draft = buildOutreachDraft({
+    lead: { email: 'buyer@example.com', company: 'ABC', name: 'John' },
+    companyProfile: {
+      name: 'Export Co',
+      products: 'LED lights',
+      senderName: 'Jane',
+      senderTitle: 'Sales Manager',
+    },
+  })
+  assert.equal(draft.to, 'buyer@example.com')
+  assert.match(draft.body, /LED lights/)
 })
 
 test('buildDailyDigest summarizes tags', () => {

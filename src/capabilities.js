@@ -18,6 +18,12 @@ const capabilities = [
     description: 'Local lowdb contacts, processed message state, and conversation history.',
   },
   {
+    area: 'SOHO dashboard',
+    status: 'runnable',
+    command: 'npm run dashboard',
+    description: 'Local browser workspace for lead import, lead scoring, draft queue, and follow-up reminders.',
+  },
+  {
     area: 'Lead discovery workspace',
     status: 'starter module',
     command: 'npm run leads:demo',

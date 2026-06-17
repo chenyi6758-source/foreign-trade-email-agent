@@ -12,6 +12,9 @@ const defaultData = {
   contacts: [],
   threads: [],
   processed: [],
+  leads: [],
+  drafts: [],
+  followUps: [],
 }
 
 let db
@@ -90,6 +93,160 @@ export async function upsertContact({ email, name = '', company = '', source = '
   database.data.contacts.push(contact)
   await database.write()
   return contact
+}
+
+function createId(prefix) {
+  return `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2)}`
+}
+
+export async function upsertLead({
+  email = '',
+  company = '',
+  name = '',
+  website = '',
+  country = '',
+  source = 'manual',
+  score = 0,
+  tags = [],
+  notes = '',
+  rawText = '',
+}) {
+  const database = getDB()
+  const normalizedEmail = email.toLowerCase()
+  const normalizedWebsite = website.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '')
+  const existing = database.data.leads.find((lead) => (
+    (normalizedEmail && lead.email?.toLowerCase() === normalizedEmail) ||
+    (normalizedWebsite && lead.website?.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '') === normalizedWebsite)
+  ))
+
+  if (existing) {
+    existing.name = existing.name || name
+    existing.company = existing.company || company
+    existing.website = existing.website || website
+    existing.country = existing.country || country
+    existing.score = Math.max(existing.score || 0, score || 0)
+    existing.tags = [...new Set([...(existing.tags || []), ...tags])]
+    existing.notes = [existing.notes, notes].filter(Boolean).join('\n')
+    existing.rawText = existing.rawText || rawText
+    existing.updatedAt = new Date().toISOString()
+    await database.write()
+    return existing
+  }
+
+  const lead = {
+    id: createId('lead'),
+    email,
+    name,
+    company,
+    website,
+    country,
+    source,
+    score,
+    tags,
+    notes,
+    rawText,
+    stage: 'new',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+  database.data.leads.push(lead)
+  await database.write()
+  return lead
+}
+
+export function listLeads({ stage } = {}) {
+  const leads = getDB().data.leads
+  return stage ? leads.filter((lead) => lead.stage === stage) : leads
+}
+
+export async function updateLeadStage(id, stage) {
+  const lead = getDB().data.leads.find((item) => item.id === id)
+  if (!lead) throw new Error(`Lead not found: ${id}`)
+  lead.stage = stage
+  lead.updatedAt = new Date().toISOString()
+  await getDB().write()
+  return lead
+}
+
+export async function createDraft({
+  leadId = '',
+  to = '',
+  subject,
+  body,
+  channel = 'email',
+  status = 'draft',
+  purpose = 'outreach',
+}) {
+  const database = getDB()
+  const draft = {
+    id: createId('draft'),
+    leadId,
+    to,
+    subject,
+    body,
+    channel,
+    purpose,
+    status,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+  database.data.drafts.push(draft)
+  await database.write()
+  return draft
+}
+
+export function listDrafts({ status } = {}) {
+  const drafts = getDB().data.drafts
+  return status ? drafts.filter((draft) => draft.status === status) : drafts
+}
+
+export async function updateDraftStatus(id, status) {
+  const draft = getDB().data.drafts.find((item) => item.id === id)
+  if (!draft) throw new Error(`Draft not found: ${id}`)
+  draft.status = status
+  draft.updatedAt = new Date().toISOString()
+  await getDB().write()
+  return draft
+}
+
+export async function scheduleFollowUp({
+  leadId = '',
+  contactEmail = '',
+  dueAt,
+  reason = 'follow-up',
+  status = 'open',
+}) {
+  const database = getDB()
+  const item = {
+    id: createId('followup'),
+    leadId,
+    contactEmail,
+    dueAt,
+    reason,
+    status,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+  database.data.followUps.push(item)
+  await database.write()
+  return item
+}
+
+export function listFollowUps({ status = 'open', dueBefore } = {}) {
+  return getDB().data.followUps.filter((item) => {
+    if (status && item.status !== status) return false
+    if (dueBefore && new Date(item.dueAt) > new Date(dueBefore)) return false
+    return true
+  })
+}
+
+export async function completeFollowUp(id) {
+  const item = getDB().data.followUps.find((followUp) => followUp.id === id)
+  if (!item) throw new Error(`Follow-up not found: ${id}`)
+  item.status = 'done'
+  item.updatedAt = new Date().toISOString()
+  await getDB().write()
+  return item
 }
 
 export async function appendThread({ contactEmail, direction, subject, body, messageId, status = 'recorded' }) {
