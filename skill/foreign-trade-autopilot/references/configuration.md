@@ -1,5 +1,7 @@
 # Configuration Reference
 
+# Configuration Reference
+
 Required for mailbox automation:
 
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`
@@ -20,6 +22,7 @@ Recommended first run:
 ```bash
 npm install
 cp .env.example .env
+npm run capabilities
 npm run once
 ```
 
@@ -30,3 +33,4 @@ Production checklist:
 - Keep `MAX_EMAILS_PER_SCAN` low during rollout.
 - Monitor `data/db.json` and SMTP sending logs.
 - Back up `data/db.json` if conversation history matters.
+- Keep WhatsApp disconnected until a dedicated account, dry-run policy, and frequency limits are ready.

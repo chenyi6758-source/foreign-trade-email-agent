@@ -1,7 +1,7 @@
 {
-  "name": "foreign-trade-email-agent",
+  "name": "foreign-trade-autopilot",
   "version": "0.1.0",
-  "description": "Safe-by-default AI email assistant for foreign trade teams.",
+  "description": "Safe-by-default AI autopilot for foreign trade outreach, email replies, leads, CRM, and market intelligence.",
   "type": "module",
   "main": "src/main.js",
   "scripts": {
@@ -9,12 +9,21 @@
     "once": "node src/main.js --once",
     "contacts": "node src/view_contacts.js",
     "outreach": "node src/send_outreach.js",
+    "capabilities": "node src/capabilities.js",
+    "leads:demo": "node src/leads.js --demo",
+    "intel:demo": "node src/market_intel.js --demo",
+    "whatsapp:status": "node src/whatsapp.js",
     "test": "node --test",
-    "check": "node --check src/main.js && node --check src/ai.js && node --check src/mailer.js && node --check src/db.js && node --check src/send_outreach.js && node --check src/view_contacts.js"
+    "check": "node --check src/main.js && node --check src/ai.js && node --check src/mailer.js && node --check src/db.js && node --check src/send_outreach.js && node --check src/view_contacts.js && node --check src/capabilities.js && node --check src/leads.js && node --check src/market_intel.js && node --check src/whatsapp.js"
   },
   "keywords": [
     "foreign-trade",
+    "sales-automation",
+    "lead-generation",
+    "market-intelligence",
     "email",
+    "whatsapp",
+    "crm",
     "ai-agent",
     "imap",
     "smtp",

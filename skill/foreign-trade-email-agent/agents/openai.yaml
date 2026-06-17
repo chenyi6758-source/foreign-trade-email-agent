@@ -1,6 +1,0 @@
-interface:
-  display_name: "Foreign Trade Email Agent"
-  short_description: "Safely configure and improve an AI trade email assistant."
-  default_prompt: "Use $foreign-trade-email-agent to configure and validate a dry-run foreign trade email assistant."
-policy:
-  allow_implicit_invocation: true
