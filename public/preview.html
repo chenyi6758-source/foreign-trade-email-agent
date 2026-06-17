@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Foreign Trade Autopilot Preview</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Static preview</p>
+        <h1>Foreign Trade Autopilot</h1>
+      </div>
+      <button disabled>Preview Mode</button>
+    </header>
+
+    <main>
+      <section class="metrics">
+        <div class="metric"><strong>0</strong><span>Contacts</span></div>
+        <div class="metric"><strong>1</strong><span>Leads</span></div>
+        <div class="metric"><strong>1</strong><span>Drafts</span></div>
+        <div class="metric"><strong>1</strong><span>Open follow-ups</span></div>
+        <div class="metric"><strong>1</strong><span>High score leads</span></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-title">
+          <h2>Import Leads</h2>
+          <p>Server-free preview of the SOHO workflow.</p>
+        </div>
+        <div class="form-grid">
+          <label>
+            Target keywords
+            <input value="LED, solar, importer" readonly>
+          </label>
+          <label class="wide">
+            CSV
+            <textarea rows="5" readonly>company,name,email,website,country,notes
+SOHO Test Lighting,Alex,alex@sohotest.example,www.sohotest.example,United States,LED importer looking for solar garden lights</textarea>
+          </label>
+        </div>
+      </section>
+
+      <section class="grid">
+        <article class="panel">
+          <div class="panel-title">
+            <h2>Lead Pool</h2>
+            <p>High score leads are shown first.</p>
+          </div>
+          <div class="list">
+            <div class="item">
+              <h3>SOHO Test Lighting <span class="score">100</span></h3>
+              <div class="meta">alex@sohotest.example · www.sohotest.example · United States · new</div>
+              <p>LED importer looking for solar garden lights</p>
+              <button disabled>Create outreach draft</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-title">
+            <h2>Draft Queue</h2>
+            <p>Review drafts before sending.</p>
+          </div>
+          <div class="list">
+            <div class="item">
+              <h3>Product cooperation for SOHO Test Lighting</h3>
+              <div class="meta">alex@sohotest.example · email · draft</div>
+              <pre>Hi Alex,
+
+I noticed SOHO Test Lighting may be interested in our products. I am Sales Team, Foreign Trade Manager at our company.
+
+Could I send you a short catalog and quotation for your market? If you have target specifications, quantity, or certification requirements, I can prepare a more accurate proposal.
+
+Best regards,
+Sales Team</pre>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="panel">
+        <div class="panel-title">
+          <h2>Follow-ups</h2>
+          <p>Default first-touch follow-up is scheduled three days after draft creation.</p>
+        </div>
+        <div class="list compact">
+          <div class="item">
+            <span>alex@sohotest.example · Check first-touch outreach result</span>
+            <span class="meta">2026-06-20</span>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
