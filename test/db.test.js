@@ -17,6 +17,9 @@ import {
   listDrafts,
   scheduleFollowUp,
   listFollowUps,
+  completeFollowUp,
+  approveDraft,
+  markDraftSent,
 } from '../src/db.js'
 
 async function tempDb() {
@@ -59,4 +62,26 @@ test('database stores leads, drafts, and follow-ups', async () => {
   assert.equal(listLeads().length, 1)
   assert.equal(listDrafts()[0].id, draft.id)
   assert.equal(listFollowUps().length, 1)
+})
+
+test('database updates lead workflow states', async () => {
+  await initDB(await tempDb())
+  const lead = await upsertLead({ email: 'lead@example.com', company: 'Lead Co', score: 88 })
+  const draft = await createDraft({
+    leadId: lead.id,
+    to: lead.email,
+    subject: 'Hello',
+    body: 'Draft body',
+  })
+  const followUp = await scheduleFollowUp({
+    leadId: lead.id,
+    contactEmail: lead.email,
+    dueAt: new Date(Date.now() + 86400000).toISOString(),
+  })
+
+  assert.equal((await approveDraft(draft.id)).status, 'approved')
+  assert.equal((await markDraftSent(draft.id)).status, 'sent')
+  assert.equal(listLeads()[0].stage, 'contacted')
+  assert.equal((await completeFollowUp(followUp.id)).status, 'done')
+  assert.equal(listFollowUps().some((item) => item.id === followUp.id), false)
 })

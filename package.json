@@ -15,7 +15,7 @@
     "intel:demo": "node src/market_intel.js --demo",
     "whatsapp:status": "node src/whatsapp.js",
     "test": "node --test",
-    "check": "node --check src/main.js && node --check src/ai.js && node --check src/mailer.js && node --check src/db.js && node --check src/send_outreach.js && node --check src/view_contacts.js && node --check src/capabilities.js && node --check src/leads.js && node --check src/market_intel.js && node --check src/whatsapp.js && node --check src/server.js"
+    "check": "node --check src/main.js && node --check src/ai.js && node --check src/mailer.js && node --check src/db.js && node --check src/send_outreach.js && node --check src/view_contacts.js && node --check src/capabilities.js && node --check src/leads.js && node --check src/market_intel.js && node --check src/whatsapp.js && node --check src/server.js && node --check src/csv.js"
   },
   "keywords": [
     "foreign-trade",

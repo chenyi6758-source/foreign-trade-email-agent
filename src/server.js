@@ -8,12 +8,17 @@ import {
   getDB,
   listLeads,
   upsertLead,
+  updateLeadStage,
   listDrafts,
   createDraft,
+  approveDraft,
+  markDraftSent,
   listFollowUps,
   scheduleFollowUp,
+  completeFollowUp,
 } from './db.js'
 import { buildOutreachDraft, parseLeadCsv } from './leads.js'
+import { draftColumns, followUpColumns, leadColumns, toCsv } from './csv.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const publicDir = path.join(__dirname, '..', 'public')
@@ -22,6 +27,14 @@ const port = Number.parseInt(process.env.PORT || '8787', 10)
 function json(res, statusCode, payload) {
   res.writeHead(statusCode, { 'content-type': 'application/json; charset=utf-8' })
   res.end(JSON.stringify(payload, null, 2))
+}
+
+function csv(res, filename, content) {
+  res.writeHead(200, {
+    'content-type': 'text/csv; charset=utf-8',
+    'content-disposition': `attachment; filename="${filename}"`,
+  })
+  res.end(content)
 }
 
 async function readJson(req) {
@@ -58,6 +71,18 @@ async function routeApi(req, res, url) {
   }
   if (req.method === 'GET' && url.pathname === '/api/followups') {
     json(res, 200, listFollowUps({ status: 'open' }))
+    return true
+  }
+  if (req.method === 'GET' && url.pathname === '/api/export/leads.csv') {
+    csv(res, 'leads.csv', toCsv(listLeads(), leadColumns))
+    return true
+  }
+  if (req.method === 'GET' && url.pathname === '/api/export/drafts.csv') {
+    csv(res, 'drafts.csv', toCsv(listDrafts(), draftColumns))
+    return true
+  }
+  if (req.method === 'GET' && url.pathname === '/api/export/followups.csv') {
+    csv(res, 'followups.csv', toCsv(getDB().data.followUps, followUpColumns))
     return true
   }
   if (req.method === 'POST' && url.pathname === '/api/leads/import') {
@@ -101,6 +126,27 @@ async function routeApi(req, res, url) {
       reason: 'Check first-touch outreach result',
     })
     json(res, 200, draft)
+    return true
+  }
+  if (req.method === 'POST' && url.pathname.match(/^\/api\/leads\/[^/]+\/stage$/)) {
+    const id = decodeURIComponent(url.pathname.split('/')[3])
+    const body = await readJson(req)
+    json(res, 200, await updateLeadStage(id, body.stage))
+    return true
+  }
+  if (req.method === 'POST' && url.pathname.match(/^\/api\/drafts\/[^/]+\/approve$/)) {
+    const id = decodeURIComponent(url.pathname.split('/')[3])
+    json(res, 200, await approveDraft(id))
+    return true
+  }
+  if (req.method === 'POST' && url.pathname.match(/^\/api\/drafts\/[^/]+\/sent$/)) {
+    const id = decodeURIComponent(url.pathname.split('/')[3])
+    json(res, 200, await markDraftSent(id))
+    return true
+  }
+  if (req.method === 'POST' && url.pathname.match(/^\/api\/followups\/[^/]+\/complete$/)) {
+    const id = decodeURIComponent(url.pathname.split('/')[3])
+    json(res, 200, await completeFollowUp(id))
     return true
   }
   return false

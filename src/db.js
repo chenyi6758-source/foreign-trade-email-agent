@@ -209,6 +209,28 @@ export async function updateDraftStatus(id, status) {
   return draft
 }
 
+export async function approveDraft(id) {
+  return updateDraftStatus(id, 'approved')
+}
+
+export async function markDraftSent(id) {
+  const database = getDB()
+  const draft = database.data.drafts.find((item) => item.id === id)
+  if (!draft) throw new Error(`Draft not found: ${id}`)
+  draft.status = 'sent'
+  draft.sentAt = new Date().toISOString()
+  draft.updatedAt = new Date().toISOString()
+  if (draft.leadId) {
+    const lead = database.data.leads.find((item) => item.id === draft.leadId)
+    if (lead && !['replied', 'quoted', 'sample', 'won', 'lost'].includes(lead.stage)) {
+      lead.stage = 'contacted'
+      lead.updatedAt = new Date().toISOString()
+    }
+  }
+  await database.write()
+  return draft
+}
+
 export async function scheduleFollowUp({
   leadId = '',
   contactEmail = '',
