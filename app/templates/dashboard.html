@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ settings.app_name }}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>{{ settings.app_name }}</h1>
+      <p>外贸客户自动回复、线索管理和市场信息采集控制台</p>
+    </div>
+    <div class="top-actions">
+      <span class="admin-pill">{{ admin }}</span>
+      <form action="/api/intel/refresh" method="post">
+        <button type="submit">刷新资讯</button>
+      </form>
+      <form action="/logout" method="post">
+        <button type="submit" class="secondary">退出</button>
+      </form>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section>
+      <div class="section-title">
+        <h2>配置状态</h2>
+        <span>8</span>
+      </div>
+      <div class="status-grid">
+        <div><strong class="{{ 'ok' if config.auth.ready else 'warn' }}">登录</strong><p>{{ config.auth.username }} · {{ '已加固' if config.auth.ready else '请修改默认密码和会话密钥' }}</p></div>
+        <div><strong class="{{ 'ok' if config.webhook_auth.ready else 'warn' }}">Webhook</strong><p>{{ '已启用' if config.webhook_auth.enabled else '未启用' }} · {{ '已加固' if config.webhook_auth.ready else '请修改默认密钥' }}</p></div>
+        <div><strong class="{{ 'ok' if config.unsubscribe.ready else 'warn' }}">退订</strong><p>{{ '已启用' if config.unsubscribe.enabled else '未启用' }} · {{ '已加固' if config.unsubscribe.ready else '请修改默认密钥' }}</p></div>
+        <div><strong class="{{ 'ok' if config.llm.ready else 'warn' }}">模型</strong><p>{{ config.llm.model }} · {{ '已配置' if config.llm.ready else '未配置 API Key' }}</p></div>
+        <div><strong class="{{ 'ok' if config.email.ready else 'warn' }}">邮箱</strong><p>{{ config.email.from_email }} · {{ '已配置' if config.email.ready else '未配置 SMTP' }}</p></div>
+        <div><strong class="{{ 'ok' if config.deliverability.checks|selectattr('ok')|list|length == config.deliverability.checks|length else 'warn' }}">送达率</strong><p>{{ config.deliverability.sender_domain or '未配置发件域名' }}</p></div>
+        <div><strong class="{{ 'ok' if config.whatsapp.ready else 'warn' }}">WhatsApp</strong><p>{{ config.whatsapp.provider }} · {{ '已配置' if config.whatsapp.ready else '未启用' }}</p></div>
+        <div><strong class="ok">端口</strong><p>{{ config.app.host }}:{{ config.app.port }}</p></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">
+        <h2>销售漏斗</h2>
+        <span>{{ pipeline|sum(attribute='total') }}</span>
+      </div>
+      <div class="pipeline-grid">
+        {% for item in pipeline %}
+          <div>
+            <strong>{{ item.stage }}</strong>
+            <span>{{ item.total }}</span>
+            <p>${{ '%.0f'|format(item.deal_value or 0) }}</p>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">
+        <h2>待跟进</h2>
+        <span>{{ due_leads|length }}</span>
+      </div>
+      <div class="list">
+        {% for lead in due_leads %}
+          <article>
+            <div class="meta">{{ lead.next_follow_up_at }} · {{ lead.owner or '未分配' }} · {{ lead.priority }}</div>
+            <h3>{{ lead.name or lead.company or lead.email or lead.phone or 'Unknown' }}</h3>
+            <p>{{ lead.notes or lead.tags or '暂无备注' }}</p>
+          </article>
+        {% else %}
+          <p class="empty">暂无 24 小时内需要跟进的线索。</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">
+        <h2>线索</h2>
+        <span>{{ leads|length }}</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>客户</th><th>阶段</th><th>负责人</th><th>优先级</th><th>下次跟进</th><th>评分</th><th>联系方式</th></tr>
+          </thead>
+          <tbody>
+          {% for lead in leads %}
+            <tr>
+              <td>{{ lead.name or lead.company or 'Unknown' }}</td>
+              <td>{{ lead.stage }}</td>
+              <td>{{ lead.owner or '-' }}</td>
+              <td>{{ lead.priority }}</td>
+              <td>{{ lead.next_follow_up_at or '-' }}</td>
+              <td><strong>{{ lead.score }}</strong></td>
+              <td>{{ lead.email or lead.phone or '-' }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="7" class="empty">暂无线索，配置 webhook 或导入 CSV 后会进入这里。</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">
+        <h2>最近消息</h2>
+        <span>{{ messages|length }}</span>
+      </div>
+      <div class="list">
+        {% for message in messages %}
+          <article>
+            <div class="meta">{{ message.channel }} · {{ message.direction }} · {{ message.status }}</div>
+            <h3>{{ message.subject or message.sender }}</h3>
+            <p>{{ message.body }}</p>
+          </article>
+        {% else %}
+          <p class="empty">暂无消息。</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">
+        <h2>海外资讯</h2>
+        <span>{{ intel|length }}</span>
+      </div>
+      <div class="list">
+        {% for item in intel %}
+          <article>
+            <div class="meta">相关度 {{ item.relevance_score }} · {{ item.market or 'Global' }}</div>
+            <h3><a href="{{ item.url }}" target="_blank" rel="noreferrer">{{ item.title }}</a></h3>
+            <p>{{ item.summary }}</p>
+          </article>
+        {% else %}
+          <p class="empty">暂无资讯，点击刷新资讯或配置 INTEL_FEEDS。</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">
+        <h2>获客草稿</h2>
+        <span>{{ drafts|length }}</span>
+      </div>
+      <div class="list">
+        {% for draft in drafts %}
+          <article>
+            <div class="meta">{{ draft.status }} · {{ draft.recipient }}</div>
+            <h3>{{ draft.subject }}</h3>
+            <p>{{ draft.body }}</p>
+          </article>
+        {% else %}
+          <p class="empty">暂无草稿。使用 /api/campaigns/drafts 创建。</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">
+        <h2>审计日志</h2>
+        <span>{{ audits|length }}</span>
+      </div>
+      <div class="list">
+        {% for audit in audits %}
+          <article>
+            <div class="meta">{{ audit.created_at }} · {{ audit.actor }}</div>
+            <h3>{{ audit.action }} · {{ audit.entity_type }} {{ audit.entity_id or '' }}</h3>
+            <p>{{ audit.detail }}</p>
+          </article>
+        {% else %}
+          <p class="empty">暂无审计日志。</p>
+        {% endfor %}
+      </div>
+    </section>
+  </main>
+</body>
+</html>

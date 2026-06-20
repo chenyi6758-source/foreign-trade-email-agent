@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>退订 · {{ settings.app_name }}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="login-body">
+  <main class="login-panel">
+    <h1>退订邮件</h1>
+    {% if done %}
+      <p>{{ email }} 已加入退订名单，我们不会再向该邮箱发送营销邮件。</p>
+    {% elif valid %}
+      <p>确认后，{{ email }} 将不再接收营销邮件。</p>
+      <form method="post" action="/unsubscribe" class="login-form">
+        <input type="hidden" name="email" value="{{ email }}">
+        <input type="hidden" name="token" value="{{ token }}">
+        <button type="submit">确认退订</button>
+      </form>
+    {% else %}
+      <div class="login-error">退订链接无效或已被篡改。</div>
+    {% endif %}
+  </main>
+</body>
+</html>

@@ -1,6 +1,0 @@
-interface:
-  display_name: "Foreign Trade Autopilot"
-  short_description: "Build and operate a safe AI workspace for foreign trade automation."
-  default_prompt: "Use $foreign-trade-autopilot to extend and validate a safe foreign trade AI automation workspace."
-policy:
-  allow_implicit_invocation: true

@@ -1,169 +1,248 @@
-# Foreign Trade Autopilot
+# ExportPilot AI
 
-Foreign Trade Autopilot is a safe-by-default AI workspace for foreign trade SOHO operators and small export teams. It started as an email reply agent, but now grows toward a daily sales workspace: lead pool, outreach drafts, follow-up reminders, email handling, CRM records, market intelligence, and future WhatsApp integration.
+ExportPilot AI is a FastAPI-based MVP for export sales teams and solo foreign-trade operators. It captures inbound buyer messages, scores and manages leads, drafts compliant outreach, tracks follow-ups, and keeps slow work in a small SQLite-backed job queue.
 
-The project intentionally keeps dangerous automation off by default. AI can draft and organize work first; live sending requires explicit configuration.
+The project is designed to be useful on a local Windows laptop first, then deployable to a small VPS when you are ready.
 
-## Current Capabilities
+## Documentation
 
-| Area | Status | Command |
-| --- | --- | --- |
-| Email autopilot | Runnable | `npm run once` / `npm start` |
-| Manual outreach email | Runnable | `npm run outreach -- --to buyer@example.com` |
-| Local CRM records | Runnable | `npm run contacts` |
-| SOHO dashboard | Runnable | `npm run dashboard` |
-| Lead import and scoring | Starter module | `npm run leads:demo` |
-| Market intelligence digest | Starter module | `npm run intel:demo` |
-| WhatsApp channel | Adapter placeholder | `npm run whatsapp:status` |
-| Hermes/Codex skill | Valid skill package | `skill/foreign-trade-autopilot/` |
-| SOHO workflow skill | Validatable workflow skill | `skill/foreign-trade-soho-workflow/` |
+- [Architecture](docs/ARCHITECTURE.md)
+- [Deployment Guide](docs/DEPLOYMENT.md)
+- [Release Checklist](docs/RELEASE.md)
+- [Commercial Readiness Notes](COMMERCIAL_READY.md)
+- [Feasibility Lab](FEASIBILITY.md)
+- [Security Policy](SECURITY.md)
+- [Contributing](CONTRIBUTING.md)
 
-## What This Solves For A SOHO Exporter
+## What It Does
 
-- Import buyer leads from CSV or copied directory data.
-- Score leads by email, website, keywords, and buyer-type signals.
-- Create first-touch outreach drafts without immediately sending them.
-- Keep a simple draft queue for review.
-- Schedule follow-up reminders after first outreach.
-- Read recent inbound email and draft safe AI replies.
-- Store contacts, conversation history, processed mail, leads, drafts, and follow-ups locally.
+- Receives inbound email webhooks and creates leads/messages.
+- Supports provider-style inbound routes for Mailgun, SendGrid, Postmark, and generic JSON payloads.
+- Stores inbound attachment metadata and SHA-256 hashes without executing attachments.
+- Receives WhatsApp webhooks and drafts replies.
+- Imports prospect CSV files from trade shows, B2B platforms, customs data, or manual research.
+- Scores leads by buying intent such as RFQ, quotation, price, MOQ, sample, tender, distributor, and importer.
+- Generates cold-outreach drafts that require human approval by default.
+- Adds unsubscribe text and `List-Unsubscribe` headers for outbound email.
+- Provides a protected dashboard and protected `/api/*` endpoints.
+- Provides webhook token/HMAC authentication.
+- Provides a SQLite job queue for scheduled follow-ups, queued email sends, draft sends, and RSS/intel refreshes.
+- Provides health checks, CSV exports, SQLite backups, and a production launcher script.
+
+## Tech Stack
+
+- Python 3.11+
+- FastAPI
+- SQLite
+- Jinja2
+- SMTP
+- Twilio WhatsApp or Meta WhatsApp Cloud API
+- OpenAI-compatible LLM endpoint, optional
 
 ## Quick Start
 
-```bash
-npm install
-cp .env.example .env
-npm run capabilities
-npm run dashboard
+```powershell
+cd C:\Users\雷歆瑶\Documents\Codex\2026-06-16\new-chat-5\outputs\foreign-trade-autopilot
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+Copy-Item .env.example .env
+uvicorn app.main:app --reload --port 8000
 ```
 
-Open the local dashboard:
+Open:
 
 ```text
-http://localhost:8787
+http://127.0.0.1:8000
 ```
 
-Run one safe email scan:
-
-```bash
-npm run once
-```
-
-By default `DRY_RUN=true`, so the first run previews replies and records drafts instead of sending real email.
-
-## SOHO Daily Workflow
-
-1. Collect buyer leads from exhibitions, directories, Google snippets, LinkedIn notes, or CSV files.
-2. Paste/import them into the dashboard.
-3. Review lead scores and company details.
-4. Generate outreach drafts for the best leads.
-5. Review and manually send or adapt the drafts.
-6. Follow up after 3 days, then 7 days, then 14 days.
-7. Use inbound email autopilot to classify replies and draft responses.
-
-## Commands
-
-```bash
-npm run dashboard
-npm run capabilities
-npm run once
-npm start
-npm run contacts
-npm run outreach -- --to buyer@example.com --name "John" --company "ABC Trading"
-npm run leads:demo
-npm run intel:demo
-npm run whatsapp:status
-npm test
-npm run check
-```
-
-## Configuration
-
-Copy `.env.example` to `.env` and fill in:
-
-- SMTP and IMAP mailbox credentials
-- `ANTHROPIC_API_KEY`
-- company name, products, sender name, and title
-
-Keep this setting for early testing:
+Default admin settings are in `.env.example`. Change these before any real use:
 
 ```env
-DRY_RUN=true
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=change-me-now
+SESSION_SECRET=change-this-session-secret
+WEBHOOK_SHARED_SECRET=change-this-to-a-long-random-webhook-secret
+UNSUBSCRIBE_SECRET=change-this-to-a-long-random-unsubscribe-secret
 ```
 
-Only enable live sending after testing with a dedicated mailbox:
+## Webhook Routes
 
-```env
-DRY_RUN=false
-```
-
-## Safety Controls
-
-- `DRY_RUN=true` by default.
-- `MAX_EMAILS_PER_SCAN` limits each inbox scan.
-- `UNSEEN_ONLY=true` can restrict scans to unread messages.
-- The scan loop has a lock to avoid overlapping runs.
-- Dry-run messages are not marked processed unless `MARK_DRY_RUN_PROCESSED=true`.
-- WhatsApp is not connected by default because QR login, account risk, and sending limits need explicit rollout planning.
-- The dashboard is local-only and has no authentication yet. Keep it on `localhost`.
-
-## Project Structure
+Generic email webhook:
 
 ```text
-src/
-  ai.js              Claude classification and email drafting
-  config.js          environment and CLI parsing
-  db.js              local CRM, leads, drafts, follow-ups, mail state
-  mailer.js          IMAP/SMTP email channel
-  main.js            email autopilot entrypoint
-  send_outreach.js   manual outreach command
-  view_contacts.js   contact and thread viewer
-  leads.js           lead extraction, CSV parsing, scoring, draft builder
-  market_intel.js    starter market intelligence digest
-  whatsapp.js        WhatsApp adapter boundary
-  capabilities.js    capability table
-  server.js          local SOHO dashboard API and static server
-public/
-  index.html
-  styles.css
-  app.js
-skill/
-  foreign-trade-autopilot/
+POST /webhooks/email
 ```
 
-## Roadmap
-
-- Add lead stage changes in the dashboard.
-- Add send-approved-draft workflow with rate limits.
-- Add CSV export for leads, drafts, and follow-ups.
-- Add product knowledge base: MOQ, certificates, packaging, lead time, target markets, FAQ.
-- Add follow-up sequences: day 3, day 7, day 14.
-- Add Gmail OAuth support.
-- Add website/email discovery from buyer websites.
-- Add RSS/news monitoring for daily market intelligence.
-- Add WhatsApp adapter with dry-run, QR login, and strict sending limits.
-- Add GitHub Actions for test and audit.
-- Add SQLite/Postgres storage for production use.
-
-## Open Source Notes
-
-Do not commit `.env`, `data/`, real customer data, mailbox passwords, API keys, or `node_modules/`.
-
-AI-generated business messages should be reviewed before sending to important buyers, complaint cases, pricing discussions, compliance issues, or legal topics.
-
-## Hermes / Codex Skill
-
-Two skill packages are included:
+Provider-specific inbound email routes:
 
 ```text
-skill/foreign-trade-autopilot/       # project development and maintenance
-skill/foreign-trade-soho-workflow/   # daily SOHO business automation workflow
+POST /webhooks/email/generic
+POST /webhooks/email/mailgun
+POST /webhooks/email/sendgrid
+POST /webhooks/email/postmark
 ```
 
-Use `foreign-trade-autopilot` to guide future project development. Use `foreign-trade-soho-workflow` when an AI assistant should help run the daily business workflow: import leads, score buyers, create outreach drafts, schedule follow-ups, review inbound email, and produce daily summaries.
+WhatsApp routes:
 
-Validate the workflow skill demo without sending email:
-
-```bash
-node skill/foreign-trade-soho-workflow/scripts/run-demo-workflow.mjs
+```text
+POST /webhooks/whatsapp
+POST /webhooks/whatsapp/twilio
 ```
+
+When `WEBHOOK_AUTH_ENABLED=true`, include one of:
+
+```text
+X-Webhook-Token: your-shared-secret
+X-Webhook-Signature: sha256=<hmac-sha256-of-raw-body>
+```
+
+## Useful API Routes
+
+```text
+GET    /api/leads
+PATCH  /api/leads/{lead_id}
+GET    /api/leads/pipeline
+GET    /api/leads/follow-ups
+GET    /api/messages
+GET    /api/intel
+POST   /api/intel/refresh
+POST   /api/prospects/import-csv
+POST   /api/campaigns/drafts
+PATCH  /api/campaigns/drafts/{draft_id}
+POST   /api/campaigns/drafts/{draft_id}/approve-send
+POST   /api/send/email
+POST   /api/send/whatsapp
+GET    /api/deliverability/status
+POST   /api/jobs
+GET    /api/jobs
+POST   /api/jobs/{job_id}/retry
+GET    /api/export/leads.csv
+GET    /api/export/messages.csv
+GET    /api/export/audit.csv
+```
+
+Operational route:
+
+```text
+GET /health
+```
+
+## Job Queue
+
+The queue is intentionally SQLite-friendly. It is enough for a solo operator or a small team before moving to Redis/Celery.
+
+Supported job types:
+
+```text
+follow_up_reminder
+refresh_intel
+send_email
+send_draft
+```
+
+Create a job through the API:
+
+```json
+{
+  "type": "follow_up_reminder",
+  "payload": {
+    "lead_id": 1,
+    "note": "Send quotation follow-up"
+  }
+}
+```
+
+Run the scheduler once:
+
+```powershell
+python scripts\scheduler.py --intel
+```
+
+Run the worker once:
+
+```powershell
+python scripts\worker.py --once
+```
+
+Run the worker continuously:
+
+```powershell
+python scripts\worker.py --poll-seconds 30
+```
+
+## Backups and Export
+
+Create a timestamped SQLite backup:
+
+```powershell
+python scripts\backup_sqlite.py
+```
+
+CSV exports are protected by admin login:
+
+```text
+/api/export/leads.csv
+/api/export/messages.csv
+/api/export/audit.csv
+```
+
+## Production Launcher
+
+```powershell
+Copy-Item .env.production.example .env.production
+notepad .env.production
+powershell -ExecutionPolicy Bypass -File scripts\run_prod.ps1
+```
+
+For a public server, run it behind HTTPS with Caddy, Nginx, or another reverse proxy. The app exposes `/health` for uptime checks.
+
+## Verification
+
+Unit tests:
+
+```powershell
+python -m pytest tests -q
+```
+
+API smoke test:
+
+```powershell
+python scripts\api_smoke_test.py
+```
+
+Feasibility lab:
+
+```powershell
+python scripts\feasibility_lab.py
+```
+
+Release check:
+
+```powershell
+python scripts\release_check.py
+```
+
+The feasibility lab runs without real SMTP, WhatsApp, OpenAI, or RSS credentials. Real sending and live market intelligence still require provider accounts and network access.
+
+## Safety Defaults
+
+- Cold outreach is draft-only by default.
+- Auto-send is disabled by default.
+- Unsubscribe text is appended to outbound email.
+- Opted-out contacts are blocked before sending.
+- Webhook authentication is enabled by default.
+- Admin login protects the dashboard, OpenAPI docs, and `/api/*`.
+
+## Suggested Production Path
+
+1. Configure real SMTP and verify SPF, DKIM, DMARC, and bounce handling.
+2. Configure Mailgun, SendGrid, or Postmark inbound parsing.
+3. Connect WhatsApp through Twilio or Meta only after business verification.
+4. Run `scripts\scheduler.py` through Windows Task Scheduler.
+5. Run `scripts\worker.py` through Windows Task Scheduler, NSSM, PM2, or a VPS process manager.
+6. Schedule `scripts\backup_sqlite.py` before storing real customer records.
+
+## License
+
+Add a license before publishing publicly. MIT is a practical default for an open-source MVP, but choose based on your business plan.
