@@ -5,8 +5,10 @@ Set-Location $ProjectRoot
 
 New-Item -ItemType Directory -Force -Path "data" | Out-Null
 
-$Python = "D:\hermes\hermes-agent\venv\Scripts\python.exe"
-if (-not (Test-Path $Python)) {
+$VenvPython = Join-Path $ProjectRoot ".venv\Scripts\python.exe"
+if (Test-Path $VenvPython) {
+    $Python = $VenvPython
+} else {
     $Python = "python"
 }
 
