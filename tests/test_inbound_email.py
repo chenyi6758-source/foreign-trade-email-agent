@@ -73,3 +73,36 @@ def test_generic_email_webhook_records_attachment(tmp_path, monkeypatch):
 
     with get_db() as conn:
         assert conn.execute("SELECT COUNT(*) FROM inbound_attachments").fetchone()[0] == 1
+
+
+def test_high_risk_email_is_drafted_not_sent(tmp_path, monkeypatch):
+    db_path = tmp_path / "risk.db"
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_path}")
+    monkeypatch.setenv("WEBHOOK_SHARED_SECRET", "test-secret")
+    monkeypatch.setenv("WEBHOOK_AUTH_ENABLED", "true")
+    monkeypatch.setenv("SMTP_HOST", "smtp.example.com")
+    get_settings.cache_clear()
+
+    from app import main
+
+    def fail_if_sent(*_args, **_kwargs):
+        raise AssertionError("high-risk inbound messages must not be auto-sent")
+
+    monkeypatch.setattr(main, "send_email", fail_if_sent)
+    with TestClient(main.app) as client:
+        response = client.post(
+            "/webhooks/email",
+            headers={"X-Webhook-Token": "test-secret"},
+            json={
+                "from_email": "buyer@example.com",
+                "from_name": "Buyer",
+                "subject": "Urgent complaint",
+                "body": "We need to discuss a product injury and possible lawsuit.",
+            },
+        )
+
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    assert payload["auto_reply"] == "drafted"
+    assert payload["risk_level"] == "high"
+    assert "legal_or_safety_issue" in payload["risk_reasons"]

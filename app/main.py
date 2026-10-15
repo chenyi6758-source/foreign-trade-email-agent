@@ -33,6 +33,7 @@ from app.services.leads import LeadSignal, record_message, upsert_lead
 from app.services.mailer import send_email
 from app.services.prospecting import import_prospect_csv
 from app.services.rate_limit import check_outbound_allowed
+from app.services.risk_policy import classify_inbound_message
 from app.services.unsubscribe import add_opt_out, verify_unsubscribe_token
 from app.services.webhook_security import require_webhook_auth
 from app.services.whatsapp import send_whatsapp
@@ -170,8 +171,25 @@ async def email_webhook(payload: EmailWebhook, _webhook_auth: None = Depends(req
     if is_opted_out(email=str(payload.from_email)) or not settings.auto_reply_enabled:
         return {"ok": True, "lead": lead, "auto_reply": "skipped"}
 
+    risk = classify_inbound_message(payload.body, payload.subject)
     reply = await generate_auto_reply(payload.body, payload.from_name, "email", settings)
     record_message(lead["id"], "email", "outbound", settings.sales_email, str(payload.from_email), reply, f"Re: {payload.subject}", "drafted")
+
+    if risk.requires_human_review:
+        log_event(
+            "auto_reply_held_for_review",
+            "lead",
+            lead["id"],
+            f"risk={risk.level}; reasons={','.join(risk.reasons)}",
+        )
+        return {
+            "ok": True,
+            "lead": lead,
+            "auto_reply": "drafted",
+            "reply": reply,
+            "risk_level": risk.level,
+            "risk_reasons": list(risk.reasons),
+        }
 
     if settings.smtp_host:
         try:
@@ -302,8 +320,25 @@ async def _handle_whatsapp(from_phone: str, from_name: str | None, body: str, so
     if is_opted_out(phone=from_phone) or not settings.auto_reply_enabled:
         return {"ok": True, "lead": lead, "auto_reply": "skipped"}
 
+    risk = classify_inbound_message(body)
     reply = await generate_auto_reply(body, from_name, "whatsapp", settings)
     record_message(lead["id"], "whatsapp", "outbound", "company-whatsapp", from_phone, reply, status="drafted")
+
+    if risk.requires_human_review:
+        log_event(
+            "auto_reply_held_for_review",
+            "lead",
+            lead["id"],
+            f"risk={risk.level}; reasons={','.join(risk.reasons)}",
+        )
+        return {
+            "ok": True,
+            "lead": lead,
+            "auto_reply": "drafted",
+            "reply": reply,
+            "risk_level": risk.level,
+            "risk_reasons": list(risk.reasons),
+        }
 
     if settings.whatsapp_provider != "disabled":
         try:

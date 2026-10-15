@@ -6,6 +6,12 @@ ExportPilot AI is a FastAPI-based MVP for export sales teams and solo foreign-tr
 
 The project is designed to be useful on a local Windows laptop first, then deployable to a small VPS when you are ready.
 
+Inbound replies use a deterministic safety gate in addition to the LLM prompt:
+normal product questions can follow the configured auto-reply path, while
+messages involving pricing, certificates, contracts, payments, disputes,
+legal issues, or product safety are kept as drafts for human review. This is a
+conservative guardrail, not a substitute for a production compliance review.
+
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md)
